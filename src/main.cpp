@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
+#include "server.h"
 // things that need modification: 
 // SETPOINT_C → your desired doghouse temp
 // LAG_TEMP → bigger value = less on/off cycling
@@ -57,6 +58,8 @@ void setup()
     Serial.println();
   }
   digitalWrite(EN_PIN, HIGH); // Ensure AC is off at startup
+
+  generateServer();
 }
 
 // Method readTemperature - Reads temp from DS18B20 and prints to Serial
@@ -92,11 +95,8 @@ void controlAC(float temperature) {
 // Method loop - Constantly runs to control the AC based on temp readings and fault status
 void loop() {
 
-  digitalWrite(LED, HIGH);
-  delay(1000);
-  digitalWrite(LED, LOW);
-  delay(1000);
-
   float currentTemp = readTemperature();
   controlAC(currentTemp);
+
+  manageServer(currentTemp);
 }

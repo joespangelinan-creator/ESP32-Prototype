@@ -1,0 +1,4 @@
+#include <WiFi.h>
+
+void generateServer();
+void manageServer(int currentTemp);

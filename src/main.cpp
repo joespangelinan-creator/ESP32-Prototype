@@ -120,14 +120,14 @@ void loop() {
   manageServer(currentTemp);
 
   bool mode = setControls();
-  Serial.println(mode + "test");
-  if (mode == "ON" && currentTemp > SETPOINT_C) {
+  
+  if (mode == true && currentTemp > SETPOINT_C) {
     controlAC(currentTemp);
   }
-  else if (mode == "ON" && currentTemp < SETPOINT_C) {
+  else if (mode == true && currentTemp < SETPOINT_C) {
     controlHeating(currentTemp);
   }
-  else if (mode == "OFF") {
+  else if (mode == false) {
     digitalWrite(AC_PIN, LOW); // Ensure AC is off
     digitalWrite(HEAT_PIN, LOW); // Ensure heating is off
   }

@@ -20,7 +20,8 @@ const int LED             = 2;   // D2 -> Onboard LED for status indication
 const int TEMP_SENSOR_PIN = 4;   // D4 -> DS18B20 data
 const int ONE_WIRE_BUS    = 4;   // D4 -> DS18B20 data
 const int PWM_PIN         = 5;   // D5 -> PWM_IN on compressor controller
-const int EN_PIN          = 19;  // D19 -> EN pin on controller (active HIGH)
+const int AC_PIN          = 19;  // D19 -> EN pin on controller (active HIGH)
+const int HEAT_PIN        = 21;  // D21 -> EN pin on heating element controller (active HIGH)
 const int FAULT_PIN       = 23;  // D23 <- FAULT_OUT from controller
 
 // ---------- CONTROL SETTINGS ----------
@@ -39,12 +40,14 @@ DeviceAddress tempDeviceAddress;
 
 // ---------- CONTROL VARIABLES ----------
 bool AC_ON = false; // default state of AC (off for safety)
+bool HEAT_ON = false; // default state of heating (off for safety)
 
 void setup()
 {
   Serial.begin(115200);
   pinMode(LED, OUTPUT);
-  pinMode(EN_PIN, OUTPUT);
+  pinMode(AC_PIN, OUTPUT);
+  //pinMode(HEAT_PIN, OUTPUT);
   sensors.begin();
   Serial.println("Looking for DS18B20 temperature sensor...");
   if (sensors.getAddress(tempDeviceAddress, 0)) {
@@ -57,7 +60,6 @@ void setup()
     }
     Serial.println();
   }
-  digitalWrite(EN_PIN, HIGH); // Ensure AC is off at startup
 
   generateServer();
 }
@@ -82,13 +84,32 @@ void controlAC(float temperature) {
 
   if (AC_ON) 
   {
-    digitalWrite(EN_PIN, HIGH);
+    digitalWrite(AC_PIN, HIGH);
     Serial.println("AC turned ON");
   } 
   else 
   {
-    digitalWrite(EN_PIN, LOW);
+    digitalWrite(AC_PIN, LOW);
     Serial.println("AC turned OFF");
+  }
+}
+
+void controlHeating(float temperature) {
+  if (temperature < SETPOINT_C - LAG_TEMP) {
+    HEAT_ON = true;
+  } else if (temperature > SETPOINT_C + LAG_TEMP) {
+    HEAT_ON = false;
+  }
+
+  if (HEAT_ON) 
+  {
+    digitalWrite(HEAT_PIN, HIGH);
+    Serial.println("Heating turned ON");
+  } 
+  else 
+  {
+    digitalWrite(HEAT_PIN, LOW);
+    Serial.println("Heating turned OFF");
   }
 }
 
@@ -96,7 +117,18 @@ void controlAC(float temperature) {
 void loop() {
 
   float currentTemp = readTemperature();
-  controlAC(currentTemp);
-
   manageServer(currentTemp);
+
+  bool mode = setControls();
+  Serial.println(mode + "test");
+  if (mode == "ON" && currentTemp > SETPOINT_C) {
+    controlAC(currentTemp);
+  }
+  else if (mode == "ON" && currentTemp < SETPOINT_C) {
+    controlHeating(currentTemp);
+  }
+  else if (mode == "OFF") {
+    digitalWrite(AC_PIN, LOW); // Ensure AC is off
+    digitalWrite(HEAT_PIN, LOW); // Ensure heating is off
+  }
 }

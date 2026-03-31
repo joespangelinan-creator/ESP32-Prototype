@@ -4,31 +4,24 @@
 const char* ssid     = "ESP32-Access-Point";
 const char* password = "123456789";
 int setTemperature = 70;
-String mode = "OFF";
+bool currentMode = false; // false = OFF, true = ON
 
 // Set web server port number to 80
 WiFiServer server(80);
 
 // Function to generate HTML page
-String getHTML(int setTemperature, String mode, int currentTemp) {
+String getHTML(int setTemperature, bool mode, int currentTemp) {
   // Default colors
-  String offColor = "#555555";   // dark grey (default ON)
-  String acColor = "#cccccc";    // default inactive
-  String heatColor = "#cccccc";  // default inactive
+  String offColor = "#555555";   // default ON
+  String onColor = "#cccccc";    // default inactive
 
-  // Apply mode-based styling
-  if (mode == "AC") {
-    acColor = "#87CEFA";   // light blue
-    offColor = "#cccccc";  // light grey
-  }
-  else if (mode == "HEAT") {
-    heatColor = "#FF7F7F"; // light red
-    offColor = "#cccccc";  // light grey
-  }
-  else if (mode == "OFF") {
+  if (mode == false) {
     offColor = "#555555";  // dark grey
-    acColor = "#cccccc";
-    heatColor = "#cccccc";
+    onColor = "#cccccc";  // light grey
+  }
+  else if (mode == true) {
+    onColor = "#555555";  // dark grey
+    offColor = "#cccccc";  // light grey
   }
 
   String html = "<!DOCTYPE html><html>";
@@ -37,7 +30,7 @@ String getHTML(int setTemperature, String mode, int currentTemp) {
   html += "<title>Thermostat</title>";
   html += "</head>";
 
-html += "<body style='margin:0; background-color:#f0f0f0; font-family:Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;'>";
+  html += "<body style='margin:0; background-color:#f0f0f0; font-family:Arial; display:flex; flex-direction:column; justify-content:center; align-items:center; height:100vh;'>";
   // ===== CURRENT TEMP TITLE =====
   html += "<div style='font-size:20px; margin-bottom:5px;'>Current Temperature</div>";
 
@@ -63,31 +56,22 @@ html += "<body style='margin:0; background-color:#f0f0f0; font-family:Arial; dis
 
   html += "</div>";
 
-  // RIGHT SIDE: +/- buttons
-  html += "<div style='display:flex; flex-direction:column; justify-content:space-between; height:150px;'>";
-  html += "<a href='/plus'><button type='button' style='width:60px; height:70px; font-size:24px;'>+</button></a>";
-  html += "<a href='/minus'><button type='button' style='width:60px; height:70px; font-size:24px;'>-</button></a>";
-  html += "</div>";
-
   html += "</div>";
 
   // Spacer
   html += "<div style='height:40px;'></div>";
 
   // ===== MODE BUTTONS =====
+
   html += "<div style='display:flex; justify-content:center; gap:20px;'>";
 
-  html += "<a href='/ac'><button style='padding:15px 25px; font-size:18px; background-color:";
-  html += acColor;
-  html += ";'>AC</button></a>";
+  html += "<a href='/on'><button style='padding:15px 25px; font-size:18px; background-color:";
+  html += onColor;
+  html += "; color:white;'>ON</button></a>";
 
   html += "<a href='/off'><button style='padding:15px 25px; font-size:18px; background-color:";
   html += offColor;
   html += "; color:white;'>OFF</button></a>";
-
-  html += "<a href='/heat'><button style='padding:15px 25px; font-size:18px; background-color:";
-  html += heatColor;
-  html += ";'>HEAT</button></a>";
 
   html += "</div>";
 
@@ -100,7 +84,7 @@ void generateServer() {
   Serial.begin(115200);
   
   // Connect to Wi-Fi network with SSID and password
-  Serial.print("Setting AP (Access Point)…");
+  Serial.println("Setting AP (Access Point)…");
   // Remove the password parameter, if you want the AP (Access Point) to be open
   WiFi.softAP(ssid, password);
 
@@ -138,20 +122,11 @@ void manageServer(int currentTemp){
         String tempStr = request.substring(start, end);
         setTemperature = tempStr.toInt();
     }   
-    else if (request.indexOf("GET /plus") >= 0) {
-        setTemperature++;
+    if (request.indexOf("GET /on") >= 0) {
+        currentMode = true;
     }
-    else if (request.indexOf("GET /minus") >= 0) {
-        setTemperature--;
-    }
-    else if (request.indexOf("GET /ac") >= 0) {
-        mode = "AC";
-    }
-    else if (request.indexOf("GET /heat") >= 0) {
-        mode = "HEAT";
-    }
-    else if (request.indexOf("GET /off") >= 0) {
-        mode = "OFF";
+    if (request.indexOf("GET /off") >= 0) {
+        currentMode = false;
     }
 
     // Send HTTP response
@@ -160,16 +135,17 @@ void manageServer(int currentTemp){
     client.println("Connection: close");
     client.println();
 
-    client.println(getHTML(setTemperature, mode, currentTemp));
+    client.println(getHTML(setTemperature, currentMode, currentTemp));
     client.println();
 
     delay(1);
     client.stop();
     Serial.println("Client disconnected");
-
-    // Close the connection
-    client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
   }
+}
+
+bool setControls() {
+  // This function can be expanded to include more complex logic for controlling the AC and heating based on the current temperature, set temperature, and mode.
+  // For now, it simply returns true if the mode is ON and false if the mode is OFF.
+  return currentMode;
 }

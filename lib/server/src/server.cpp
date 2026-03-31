@@ -46,7 +46,7 @@ String getHTML(int setTemperature, bool mode, int currentTemp) {
   html += "<div style='display:flex; align-items:center; justify-content:center;'>";
 
   // LEFT SIDE: title + input (centered together)
-  html += "<div style='display:flex; flex-direction:column; align-items:center; margin-right:20px;'>";
+  html += "<div style='display:flex; flex-direction:column; align-items:center; margin-right:0px;'>";
 
   html += "<div style='font-size:20px; margin-bottom:5px; text-align:center;'>Set Temperature</div>";
 
@@ -65,11 +65,11 @@ String getHTML(int setTemperature, bool mode, int currentTemp) {
 
   html += "<div style='display:flex; justify-content:center; gap:20px;'>";
 
-  html += "<a href='/on'><button style='padding:15px 25px; font-size:18px; background-color:";
+  html += "<a href='/on'><button type = 'button' style='padding:15px 25px; font-size:18px; background-color:";
   html += onColor;
   html += "; color:white;'>ON</button></a>";
 
-  html += "<a href='/off'><button style='padding:15px 25px; font-size:18px; background-color:";
+  html += "<a href='/off'><button type = 'button' style='padding:15px 25px; font-size:18px; background-color:";
   html += offColor;
   html += "; color:white;'>OFF</button></a>";
 
@@ -121,12 +121,15 @@ void manageServer(int currentTemp){
         int end = request.indexOf(" ", start);
         String tempStr = request.substring(start, end);
         setTemperature = tempStr.toInt();
+        Serial.println("Set Temperature updated to: " + String(setTemperature));
     }   
     if (request.indexOf("GET /on") >= 0) {
-        currentMode = true;
+      Serial.println("Mode set to ON");
+      currentMode = true;
     }
     if (request.indexOf("GET /off") >= 0) {
-        currentMode = false;
+      Serial.println("Mode set to OFF");
+      currentMode = false;
     }
 
     // Send HTTP response

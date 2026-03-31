@@ -152,3 +152,8 @@ bool setControls() {
   // For now, it simply returns true if the mode is ON and false if the mode is OFF.
   return currentMode;
 }
+
+int getSetTemperature() {
+  // This function can be used to retrieve the current set temperature, which can be useful for other parts of the program that need to know the set temperature.
+  return setTemperature;
+}

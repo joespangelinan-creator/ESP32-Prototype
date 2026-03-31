@@ -25,7 +25,6 @@ const int HEAT_PIN        = 21;  // D21 -> EN pin on heating element controller 
 const int FAULT_PIN       = 23;  // D23 <- FAULT_OUT from controller
 
 // ---------- CONTROL SETTINGS ----------
-const float SETPOINT_C      = 70.0;   // desired temp (°F)
 const float LAG_TEMP        = 2.0;    // +/- band to prevent rapid toggling
 const int   PWM_CHANNEL     = 0;      // LEDC channel
 const int   PWM_FREQ        = 5000;   // 5 kHz (within 1–10 kHz spec)
@@ -76,9 +75,10 @@ float readTemperature() {
 
 // Method controlAC - Takes current temp and decides whether to turn AC on or off based on setpoint and hysteresis
 void controlAC(float temperature) {
-  if (temperature > SETPOINT_C + LAG_TEMP) {
+  int setTemp = getSetTemperature(); 
+  if (temperature > setTemp + LAG_TEMP) {
     AC_ON = true;
-  } else if (temperature < SETPOINT_C - LAG_TEMP) {
+  } else if (temperature < setTemp - LAG_TEMP) {
     AC_ON = false;
   }
 
@@ -95,9 +95,10 @@ void controlAC(float temperature) {
 }
 
 void controlHeating(float temperature) {
-  if (temperature < SETPOINT_C - LAG_TEMP) {
+  int setTemp = getSetTemperature();
+  if (temperature < setTemp - LAG_TEMP) {
     HEAT_ON = true;
-  } else if (temperature > SETPOINT_C + LAG_TEMP) {
+  } else if (temperature > setTemp + LAG_TEMP) {
     HEAT_ON = false;
   }
 
@@ -120,11 +121,12 @@ void loop() {
   manageServer(currentTemp);
 
   bool mode = setControls();
-  
-  if (mode == true && currentTemp > SETPOINT_C) {
+  int setTemp = getSetTemperature();
+
+  if (mode == true && currentTemp > setTemp) {
     controlAC(currentTemp);
   }
-  else if (mode == true && currentTemp < SETPOINT_C) {
+  else if (mode == true && currentTemp < setTemp) {
     controlHeating(currentTemp);
   }
   else if (mode == false) {
